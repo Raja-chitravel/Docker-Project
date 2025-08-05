@@ -4,23 +4,38 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh 'echo "mvn install"'
-                sh 'mvn install'
+                echo "Running Maven install"
+                sh 'mvn clean install'
             }
         }
-        stage('Build the docker image') {
+
+        stage('Build the Docker Image') {
             steps {
-                sh 'echo "docker build"'
-                sh 'docker build -t amol1996/springpetclinic-123923498:v1.2 . && docker images'
-                sh 'docker images'
+                echo "Building Docker image"
+                sh '''
+                    docker build -t raja/springpetclinic-123923498:v1.2 .
+                    docker images
+                '''
             }
         }
-        stage('push the docker image') {
+
+        stage('Trivy Scan') {
             steps {
-               sh 'echo "docker push"'
-               sh 'docker push amol1996/springpetclinic-123923498:v1.2'
-               sh 'docker rmi amol1996/springpetclinic-123923498:v1.2'
-               sh 'docker images' 
+                echo "Scanning the image with Trivy"
+                sh '''
+                    trivy image --no-progress --severity HIGH,CRITICAL --exit-code 1 --format table raja/springpetclinic-123923498:v1.2
+                '''
+            }
+        }
+
+        stage('Push the Docker Image') {
+            steps {
+                echo "Pushing the Docker image to registry"
+                sh '''
+                    docker push raja/springpetclinic-123923498:v1.2
+                    docker rmi raja/springpetclinic-123923498:v1.2
+                    docker images
+                '''
             }
         }
     }
